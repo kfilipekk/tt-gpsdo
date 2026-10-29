@@ -26,8 +26,10 @@ module tt_um_kfilipekk_gpsdo (
     //a 10 mhz second. SIM_SHORT shrinks it for rtl simulation only
 `ifdef SIM_SHORT
     localparam [23:0] NOM = 24'd2000;
+    localparam [6:0]  DIV = 7'd4;
 `else
     localparam [23:0] NOM = 24'd10000000;
+    localparam [6:0]  DIV = 7'd87;  //115200 baud
 `endif
 
     wire [13:0] rdiv;
@@ -81,6 +83,7 @@ module tt_um_kfilipekk_gpsdo (
     wire        wrap = pcnt == NOM - 24'd1;
     localparam [23:0] JAM = 24'd8;
 
+    reg       busy;
     reg [7:0] ph_now, ph_prev;
     reg [6:0] f_prev;
     reg       have, jammed;
@@ -127,7 +130,7 @@ module tt_um_kfilipekk_gpsdo (
                 ph_prev <= jammed ? JAM[7:0] - 8'd1 : ph_now;
                 f_prev  <= code;
                 have    <= code != N;
-            end else if (hit && cal_ev)
+            end else if (hit && cal_ev && !busy)
                 f_prev  <= code;
             if (lost) have <= 1'b0;
         end
@@ -151,7 +154,68 @@ module tt_um_kfilipekk_gpsdo (
         if (!rst_n)         seen <= 1'b0;
         else if (pps_start) seen <= ~seen;
 
-    wire tx = 1'b1;
+    //telemetry, one line per pps: cycles short of nominal, code, taps per
+    //cycle, dac word, status. in cal mode the code of each ring edge.
+    //everything shown holds still until the next pulse
+    reg [3:0] idx;
+    reg       short;
+    wire      tx_ready;
+
+    function [7:0] hx(input [3:0] v);
+        hx = (v < 4'd10) ? 8'h30 + {4'd0, v} : 8'h37 + {4'd0, v};
+    endfunction
+
+    wire [7:0] dc_tx  = have ? dc : 8'd0;
+    wire [3:0] status = {have, cal, lost, locked};
+
+    reg [3:0] nib;
+    always @(*)
+        case (idx)
+            4'd0:    nib = dc_tx[7:4];
+            4'd1:    nib = dc_tx[3:0];
+            4'd3:    nib = {1'b0, f_prev[6:4]};
+            4'd4:    nib = f_prev[3:0];
+            4'd6:    nib = {1'b0, taps[6:4]};
+            4'd7:    nib = taps[3:0];
+            4'd9:    nib = dac[15:12];
+            4'd10:   nib = dac[11:8];
+            4'd11:   nib = dac[7:4];
+            4'd12:   nib = dac[3:0];
+            default: nib = status;
+        endcase
+    wire       gap = idx == 4'd2 || idx == 4'd5 || idx == 4'd8 || idx == 4'd13;
+    wire [7:0] ch  = idx == 4'd15 ? 8'h0A : gap ? 8'h20 : hx(nib);
+
+    reg tx_valid;
+    wire send = hit && (pps_ev || cal_ev);
+    always @(posedge clk)
+        if (!rst_n) begin
+            idx      <= 4'd0;
+            busy     <= 1'b0;
+            short    <= 1'b0;
+            tx_valid <= 1'b0;
+        end else if (!busy) begin
+            if (send) begin
+                busy     <= 1'b1;
+                short    <= cal_ev;
+                idx      <= cal_ev ? 4'd3 : 4'd0;
+                tx_valid <= 1'b1;
+            end
+        end else if (tx_ready && !tx_valid) begin
+            tx_valid <= 1'b1;
+        end else if (tx_valid && tx_ready) begin
+            tx_valid <= 1'b0;
+            if (idx == 4'd15)
+                busy <= 1'b0;
+            else
+                idx <= (short && idx == 4'd4) ? 4'd15 : idx + 4'd1;
+        end
+
+    wire tx;
+    uart_tx u_uart (
+        .clk(clk), .rst_n(rst_n), .div(DIV), .data(ch), .valid(tx_valid),
+        .ready(tx_ready), .tx(tx)
+    );
 
     assign uo_out  = {line_in, seen, rdiv[13], lost, locked, pps_out, efc, tx};
     assign uio_out = dac[15:8];
