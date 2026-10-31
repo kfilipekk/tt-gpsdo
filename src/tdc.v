@@ -26,7 +26,7 @@ module tdc #(
 
     reg [N-1:0] snap;
     reg [6:0]   left;
-    reg         busy, empty;
+    reg         busy, empty, stale;
 
     //the snap that first holds the edge is kept and shifted out
     wire fire = !busy && empty && |snap;
@@ -42,6 +42,7 @@ module tdc #(
             empty <= 1'b1;
             start <= 1'b0;
             hit   <= 1'b0;
+            stale <= 1'b0;
             left  <= 7'd0;
             code  <= 7'd0;
         end else begin
@@ -58,8 +59,11 @@ module tdc #(
                     busy  <= 1'b0;
                     hit   <= 1'b1;
                     empty <= 1'b0;
+                    stale <= 1'b1;
                 end
-            end else
+            end else if (stale)
+                stale <= 1'b0;  //snap is still the shifted out zeros
+            else
                 empty <= ~|snap;
         end
 
