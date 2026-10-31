@@ -28,9 +28,12 @@ module tdc #(
     reg [6:0]   left;
     reg         busy, empty;
 
+    //the snap that first holds the edge is kept and shifted out
+    wire fire = !busy && empty && |snap;
+
     always @(posedge clk)
-        if (busy) snap <= {1'b0, snap[N-1:1]};
-        else      snap <= tap[N:1];
+        if (busy || fire) snap <= {1'b0, snap[N-1:1]};
+        else              snap <= tap[N:1];
 
     //bubbles at the edge are counted rather than decoded
     always @(posedge clk)
@@ -42,9 +45,13 @@ module tdc #(
             left  <= 7'd0;
             code  <= 7'd0;
         end else begin
-            start <= 1'b0;
+            start <= fire;
             hit   <= 1'b0;
-            if (busy) begin
+            if (fire) begin
+                busy <= 1'b1;
+                left <= N[6:0] - 7'd1;
+                code <= {6'd0, snap[0]};
+            end else if (busy) begin
                 code <= code + {6'd0, snap[0]};
                 left <= left - 7'd1;
                 if (left == 7'd1) begin
@@ -52,15 +59,8 @@ module tdc #(
                     hit   <= 1'b1;
                     empty <= 1'b0;
                 end
-            end else begin
+            end else
                 empty <= ~|snap;
-                if (empty && |snap) begin
-                    busy  <= 1'b1;
-                    start <= 1'b1;
-                    left  <= N[6:0];
-                    code  <= 7'd0;
-                end
-            end
         end
 
 endmodule
