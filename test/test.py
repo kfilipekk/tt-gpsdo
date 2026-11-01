@@ -120,3 +120,54 @@ async def code_tracks_sub_cycle_phase(dut):
         code = int(LINE.match(lines[-1]).group(2), 16)
         want = (T_NS - off) / TAP_NS
         assert abs(code - want) <= 1, (off, code, want)
+
+
+@cocotb.test(skip=GL)
+async def loop_locks_a_slow_oscillator(dut):
+    #clk 250 ppm slow, a dac step of 1 moves it 1 ppm
+    lines = await setup(dut)
+    dac = lambda: int(dut.user_project.u_loop.dac.value)
+    y = lambda: -2.5e-4 + 1e-6 * (dac() - 32768)
+    await gps(dut, 120, y=y)
+    assert bit(dut.uo_out, 3) == 1, lines[-5:]
+    assert abs(y()) < 2e-5, (dac(), y())
+
+
+@cocotb.test(skip=GL)
+async def holdover_when_pps_stops(dut):
+    lines = await setup(dut)
+    await gps(dut, 3)
+    word = int(dut.uio_out.value)
+    assert bit(dut.uo_out, 4) == 0
+    await ClockCycles(dut.clk, 3 * NOM)
+    assert bit(dut.uo_out, 4) == 1
+    assert int(dut.uio_out.value) == word
+    #pps out keeps going from the oscillator
+    highs = 0
+    for _ in range(NOM):
+        await RisingEdge(dut.clk)
+        highs += bit(dut.uo_out, 2)
+    assert highs == NOM // 8, highs
+
+
+@cocotb.test(skip=GL)
+async def one_flipped_bit_is_outvoted(dut):
+    lines = await setup(dut)
+    await gps(dut, 3, y=lambda: -2e-4)
+    loop = dut.user_project.u_loop
+    before = int(loop.dac.value)
+    ff = loop.u_r1.b[12].u_ff
+    ff.Q.value = 1 - int(ff.Q.value)
+    await ClockCycles(dut.clk, 2)
+    assert int(loop.dac.value) == before
+    assert int(ff.Q.value) == int(loop.u_r0.b[12].u_ff.Q.value)
+
+
+@cocotb.test(skip=GL)
+async def cal_mode_streams_ring_codes(dut):
+    lines = await setup(dut, ui=CAL)
+    await ClockCycles(dut.clk, 3000)
+    codes = [int(l, 16) for l in lines if re.fullmatch(r"[0-9A-F]{2}", l)]
+    assert len(codes) >= 5, lines
+    assert all(c <= N for c in codes), codes
+    assert len(set(codes)) > 1, codes
