@@ -27,9 +27,8 @@ module loop #(
 
     //sum with saturation, so a long outage cannot wrap it
     wire signed [IW:0] sum = {integ[IW-1], integ} + {{(IW-EW+1){err[EW-1]}}, err};
-    wire signed [IW-1:0] integ_n =
-        (sum >  {IMAX[IW-1], IMAX}) ?  IMAX :
-        (sum < -{IMAX[IW-1], IMAX}) ? -IMAX : sum[IW-1:0];
+    wire               ovf = sum[IW] ^ sum[IW-1];
+    wire signed [IW-1:0] integ_n = ovf ? (sum[IW] ? -IMAX : IMAX) : sum[IW-1:0];
 
     wire [IW-1:0] d = !rst_n ? {IW{1'b0}} : (upd && !hold) ? integ_n : integ;
 
@@ -37,19 +36,21 @@ module loop #(
     tmr_reg #(.W(IW)) u_r1 (.clk(clk), .d(d), .q(i1));
     tmr_reg #(.W(IW)) u_r2 (.clk(clk), .d(d), .q(i2));
 
-    //gain picks the shift from integrator to dac word
+    //gain picks the shift from integrator to dac word, clamped to 16 bits
+    //signed and offset to binary by flipping the top bit
     wire signed [IW+1:0] iw = {{2{integ[IW-1]}}, integ};
     reg  signed [IW+1:0] w;
     always @(*)
         case (gain)
-            2'd1:    w = (iw <<< 1) + 32768;
-            2'd2:    w = (iw >>> 1) + 32768;
-            2'd3:    w = (iw >>> 2) + 32768;
-            default: w = iw + 32768;
+            2'd1:    w = iw <<< 1;
+            2'd2:    w = iw >>> 1;
+            2'd3:    w = iw >>> 2;
+            default: w = iw;
         endcase
 
+    wire sat = !(&w[IW+1:15] || ~|w[IW+1:15]);
     always @(*)
-        dac = (w < 0) ? 16'h0000 : (w > 65535) ? 16'hFFFF : w[15:0];
+        dac = sat ? {16{~w[IW+1]}} : {~w[15], w[14:0]};
 
     wire inwin = (err < $signed(LOCK_ERR)) && (err > -$signed(LOCK_ERR));
     reg [3:0] good;
