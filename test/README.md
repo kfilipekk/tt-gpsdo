@@ -1,47 +1,33 @@
-# Sample testbench for a Tiny Tapeout project
+# Tests
 
-This is a sample testbench for a Tiny Tapeout project. It uses [cocotb](https://docs.cocotb.org/en/stable/) to drive the DUT and check the outputs.
-See below to get started or for more information, check the [website](https://tinytapeout.com/hdl/testing/).
-
-## Setting up
-
-1. Edit [Makefile](Makefile) and modify `PROJECT_SOURCES` to point to your Verilog files.
-2. Edit [tb.v](tb.v) and replace `tt_um_example` with your module name.
-
-## How to run
-
-To run the RTL simulation:
+cocotb tests in [test.py](test.py), run with iverilog.
 
 ```sh
 make -B
 ```
 
-To run gatelevel simulation, first harden your project and copy `../runs/wokwi/results/final/verilog/gl/{your_module_name}.v` to `gate_level_netlist.v`.
+RTL runs with `SIM_SHORT`, which gives a second of 2000 clocks and 4 clocks
+per UART bit, and with [cells.v](cells.v), which models the delay and ring
+cells with real delays. The tests cover:
 
-Then run:
+- the sub-cycle code and self calibration
+- lock of a 250 ppm slow oscillator
+- holdover
+- a flipped integrator bit being outvoted
+- the cal mode code stream
+
+Gate level runs the real 10 MHz design on the hardened netlist. The PDK cell
+models have no delay, so the line reads full, and only the first pulse is
+checked there. Copy the netlist from
+`runs/wokwi/final/pnl/tt_um_kfilipekk_gpsdo.pnl.v` to `gate_level_netlist.v`,
+then:
 
 ```sh
 make -B GATES=yes
 ```
 
-If you wish to save the waveform in VCD format instead of FST format, edit tb.v to use `$dumpfile("tb.vcd");` and then run:
-
-```sh
-make -B FST=
-```
-
-This will generate `tb.vcd` instead of `tb.fst`.
-
-## How to view the waveform file
-
-Using GTKWave
+To view the waveform:
 
 ```sh
 gtkwave tb.fst tb.gtkw
-```
-
-Using Surfer
-
-```sh
-surfer tb.fst
 ```

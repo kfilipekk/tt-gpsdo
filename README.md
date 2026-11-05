@@ -1,42 +1,38 @@
-![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
+![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg)
 
-# Tiny Tapeout Verilog Project Template
+# GPS disciplined oscillator on GF180
 
-- [Read the documentation for project](docs/info.md)
+This is a GPSDO controller that fits in one Tiny Tapeout tile on
+GlobalFoundries 180 nm. It:
 
-## What is Tiny Tapeout?
+- times each GPS pulse to a fraction of a clock cycle with an on-chip delay
+  line
+- calibrates that line against the clock every second
+- steers a 10 MHz oscillator through a sigma-delta DAC
 
-Tiny Tapeout is an educational project that aims to make it easier and cheaper than ever to get your digital and analog designs manufactured on a real chip.
+It also has holdover, a triplicated loop integrator, a ring oscillator
+process monitor and UART telemetry.
 
-To learn more and get started, visit https://tinytapeout.com.
+It fills 94% of the 1x1 tile, with no setup or hold violations at any
+corner, and LVS, DRC and antenna clean.
 
-## Set up your Verilog project
+It is the ASIC version of [fpga_gps_clock](https://github.com/kfilipekk/fpga_gps_clock),
+a GPSDO with a carry chain TDC on a Tang Nano 9K. That board held an OCXO to
+0.05 ppb at 4096 s against GPS, measured in loop. Here the FPGA carry chain
+becomes a chain of `dlyd` cells, and the same self calibration makes the
+measurement independent of process corner.
 
-1. Add your Verilog files to the `src` folder.
-2. Edit the [info.yaml](info.yaml) and update information about your project, paying special attention to the `source_files` and `top_module` properties. If you are upgrading an existing Tiny Tapeout project, check out our [online info.yaml migration tool](https://tinytapeout.github.io/tt-yaml-upgrade-tool/).
-3. Edit [docs/info.md](docs/info.md) and add a description of your project.
-4. Adapt the testbench to your design. See [test/README.md](test/README.md) for more information.
+- [Datasheet: how it works, how to test, hardware](docs/info.md)
+- [Testbench](test/README.md)
 
-The GitHub action will automatically build the ASIC files using [LibreLane](https://www.zerotoasiccourse.com/terminology/librelane/).
+## Layout
 
-## Enable GitHub actions to build the results page
-
-- [Enabling GitHub Pages](https://tinytapeout.com/faq/#my-github-action-is-failing-on-the-pages-part)
-
-## Resources
-
-- [FAQ](https://tinytapeout.com/faq/)
-- [Digital design lessons](https://tinytapeout.com/digital_design/)
-- [Learn how semiconductors work](https://tinytapeout.com/siliwiz/)
-- [Join the community](https://tinytapeout.com/discord)
-- [Build your design locally](https://www.tinytapeout.com/guides/local-hardening/)
-
-## What next?
-
-- [Submit your design to the next shuttle](https://app.tinytapeout.com/).
-- Edit [this README](README.md) and explain your design, how it works, and how to test it.
-- Share your project on your social network of choice:
-  - LinkedIn [#tinytapeout](https://www.linkedin.com/search/results/content/?keywords=%23tinytapeout) [@TinyTapeout](https://www.linkedin.com/company/100708654/)
-  - Mastodon [#tinytapeout](https://chaos.social/tags/tinytapeout) [@matthewvenn](https://chaos.social/@matthewvenn)
-  - X (formerly Twitter) [#tinytapeout](https://twitter.com/hashtag/tinytapeout) [@tinytapeout](https://twitter.com/tinytapeout)
-  - Bluesky [@tinytapeout.com](https://bsky.app/profile/tinytapeout.com)
+| Block | What |
+| --- | --- |
+| `src/tdc.v` | 44 tap delay line, sampled every clock, bubbles counted not decoded |
+| `src/loop.v` | integral loop: saturating, TMR integrator, gain select |
+| `src/tmr_reg.v` | kept flip-flops for the voted integrator |
+| `src/ring.v` | 31 stage ring oscillator and ripple divider |
+| `src/uart_tx.v` | telemetry at 115200 baud |
+| `src/project.v` | phase counter, self calibration, sigma-delta, telemetry |
+| `src/gpsdo.sdc` | false paths through the delay line and the ring |
