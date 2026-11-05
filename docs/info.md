@@ -63,7 +63,8 @@ sampled asynchronously on purpose, and are kept from being resized.
 
 ## How to test
 
-After reset, with just a clock:
+Hold `rst_n` low for at least 50 clocks so the TDC sample register clears.
+Then, with just a clock:
 
 1. Pulse `PPS` once. `PPS_SEEN` toggles, `PPS_OUT` restarts high and a line
    comes out of `UART_TX`.

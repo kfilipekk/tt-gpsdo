@@ -53,7 +53,7 @@ async def setup(dut, ui=0):
     dut.ui_in.value = ui
     dut.uio_in.value = 0
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
+    await ClockCycles(dut.clk, 60)  #long enough to clear the tdc snap
     dut.rst_n.value = 1
     lines = []
     cocotb.start_soon(uart_lines(dut, lines))
