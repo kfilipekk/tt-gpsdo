@@ -6,12 +6,22 @@
 */
 module tb ();
 
-  // Dump the signals to a FST file. You can view it with gtkwave or surfer.
+  //dump the signals to a fst file. you can view it with gtkwave or surfer.
+  //a timing run is a netlist of thousands of cells for a full second, too
+  //large to dump.
   initial begin
+`ifndef TIMING
     $dumpfile("tb.fst");
     $dumpvars(0, tb);
+`endif
     #1;
   end
+
+`ifdef TIMING
+  //annotate the cell delays from layout before anything happens. the sdf
+  //instance paths are relative to the design
+  initial $sdf_annotate(`TIMING_SDF, tb.user_project);
+`endif
 
   // Wire up the inputs and outputs:
   reg clk;

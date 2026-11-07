@@ -13,6 +13,8 @@ from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, RisingEdge, Timer
 
 GL = os.environ.get("GATES") == "yes"
+TIMING = os.environ.get("TIMING") == "yes"
+SDF = os.environ.get("TIMING_SDF", "")
 T_NS = 100
 NOM = 2000
 BIT = 4 if not GL else 87
@@ -21,6 +23,15 @@ N = 44
 LINE = re.compile(r"^([0-9A-F]{2}) ([0-9A-F]{2}) ([0-9A-F]{2}) ([0-9A-F]{4}) ([0-9A-F])$")
 
 CAL, RING, HOLD = 0x04, 0x08, 0x02
+
+
+def tap_ns():
+    #mean rise delay of a dlyd cell in the sdf, the tap step
+    with open(SDF) as f:
+        text = f.read()
+    d = re.findall(r'__dlyd_1"\)\s*\(INSTANCE [^)]*\)\s*\(DELAY\s*\(ABSOLUTE\s*'
+                   r'\(IOPATH I Z \(([0-9.]+):', text)
+    return sum(map(float, d)) / len(d)
 
 
 def bit(sig, i):
@@ -47,7 +58,7 @@ async def uart_lines(dut, out):
             buf += chr(byte)
 
 
-async def setup(dut, ui=0):
+async def setup(dut, ui=0, watch=True):
     cocotb.start_soon(Clock(dut.clk, T_NS, unit="ns").start())
     dut.ena.value = 1
     dut.ui_in.value = ui
@@ -56,7 +67,8 @@ async def setup(dut, ui=0):
     await ClockCycles(dut.clk, 60)  #long enough to clear the tdc snap
     dut.rst_n.value = 1
     lines = []
-    cocotb.start_soon(uart_lines(dut, lines))
+    if watch:
+        cocotb.start_soon(uart_lines(dut, lines))
     return lines
 
 
@@ -105,6 +117,41 @@ async def telemetry_line_per_pps(dut):
     assert dc == 0, lines
     assert abs(code - (T_NS - 30) / TAP_NS) <= 1, lines
     assert abs(taps - T_NS / TAP_NS) <= 1, lines
+
+
+@cocotb.test(skip=not TIMING)
+async def real_delays_move_the_code(dut):
+    #one pulse after each reset, offset after a clock edge, and the first
+    #uart line carries its code. a line takes 13 ms, so no second pulse
+    lines = await setup(dut, watch=False)
+    tap = tap_ns()
+    corner = os.environ.get("CORNER", "?")
+    codes = []
+    for off in (10.0, 30.0, 50.0, 70.0, 90.0):
+        dut.rst_n.value = 0
+        await ClockCycles(dut.clk, 60)
+        dut.rst_n.value = 1
+        lines.clear()
+        dec = cocotb.start_soon(uart_lines(dut, lines))
+        await RisingEdge(dut.clk)
+        await Timer(off, unit="ns")
+        cocotb.start_soon(pulse(dut))
+        for _ in range(400):
+            await ClockCycles(dut.clk, 100)
+            if lines:
+                break
+        dec.cancel()
+        assert lines and LINE.match(lines[0]), (off, lines[:3])
+        code = int(LINE.match(lines[0]).group(2), 16)
+        want = min(N, (T_NS - off) / tap)
+        cocotb.log.info(f"timing {corner}: offset {off:.0f} ns code {code} "
+                        f"want {want:.1f}")
+        assert abs(code - want) <= 2, (off, code, want, tap)
+        codes.append(code)
+    #the code falls as the pulse moves into the cycle, unless the line is full
+    for a, b in zip(codes, codes[1:]):
+        assert b <= a, codes
+    cocotb.log.info(f"timing {corner}: tap {tap:.2f} ns codes {codes}")
 
 
 @cocotb.test(skip=GL)
