@@ -1,0 +1,24 @@
+[tasks]
+prove
+fault
+
+[options]
+prove: mode prove
+prove: depth 8
+fault: mode prove
+fault: depth 6
+
+[engines]
+smtbmc yices
+
+[script]
+read -formal loop.v tmr_reg.v cells.v loop_chk.v tmr_f.v
+prove: prep -top loop
+fault: prep -top tmr_f
+
+[files]
+../src/loop.v
+../src/tmr_reg.v
+cells.v
+loop_chk.v
+tmr_f.v
