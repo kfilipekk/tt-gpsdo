@@ -22,9 +22,12 @@ ifneq ($(GATES),yes)
 # RTL simulation:
 SIM_BUILD				= sim_build/rtl
 VERILOG_SOURCES += $(addprefix $(SRC_DIR)/,$(PROJECT_SOURCES))
-#delayed stand-ins for the hand placed cells, and a 2000 clock second
+#delayed stand-ins for the hand placed cells, and a 2000 clock second.
+#TAP_NS=2 runs a fast die
+TAP_NS ?= 3.4
+export TAP_NS
 VERILOG_SOURCES += $(PWD)/cells.v
-COMPILE_ARGS    += -DSIM_SHORT
+COMPILE_ARGS    += -DSIM_SHORT -DTAP_NS=$(TAP_NS)
 
 else
 

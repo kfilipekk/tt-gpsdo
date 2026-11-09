@@ -38,8 +38,8 @@ module tt_um_kfilipekk_gpsdo (
     //phase counter, wraps once a nominal second. it is the pps output and
     //the coarse timebase, so missed pulses alias back onto the right phase
     reg [23:0] pcnt;
-    reg        launch, l1, l2;
-    wire       line_in = (pps_in & !cal) | launch | (rdiv[5] & cal);
+    reg        launch, launch_n, half, l1, l2;
+    wire       line_in = (pps_in & !cal) | (half ? launch_n : launch) | (rdiv[5] & cal);
 
     wire       start, hit;
     wire [6:0] code;
@@ -60,6 +60,12 @@ module tt_um_kfilipekk_gpsdo (
             l2     <= l1;
         end
 
+    //on a fast die the cycle can be longer than the line, then the pulse
+    //goes in on the falling edge and covers half a cycle
+    always @(negedge clk)
+        if (!rst_n) launch_n <= 1'b0;
+        else        launch_n <= launch;
+
     //classify on start, the code lands N clocks later
     reg self_ev, pps_ev, cal_ev;
     always @(posedge clk)
@@ -73,10 +79,21 @@ module tt_um_kfilipekk_gpsdo (
             cal_ev  <= !l2 && cal;
         end
 
+    //a full line switches to half cycles, and back once a full cycle fits
+    //with a few taps to spare
     reg [6:0] taps;
     always @(posedge clk)
-        if (!rst_n)                taps <= 7'd29;
-        else if (hit && self_ev && code != N) taps <= code;
+        if (!rst_n) begin
+            taps <= 7'd29;
+            half <= 1'b0;
+        end else if (hit && self_ev) begin
+            if (code == N) half <= 1'b1;
+            else if (half) begin
+                taps <= {code[5:0], 1'b0};
+                half <= code > N / 2 - 2;
+            end else
+                taps <= code;
+        end
 
     wire        locked;
     wire        pps_start = start && !l2 && !cal;

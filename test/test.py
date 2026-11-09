@@ -18,7 +18,7 @@ SDF = os.environ.get("TIMING_SDF", "")
 T_NS = 100
 NOM = 2000
 BIT = 4 if not GL else 87
-TAP_NS = 3.4            #dlyd stand-in in cells.v
+TAP_NS = float(os.environ.get("TAP_NS", "3.4"))  #dlyd stand-in in cells.v
 N = 44
 LINE = re.compile(r"^([0-9A-F]{2}) ([0-9A-F]{2}) ([0-9A-F]{2}) ([0-9A-F]{4}) ([0-9A-F])$")
 
@@ -116,7 +116,8 @@ async def telemetry_line_per_pps(dut):
     dc, code, taps = (int(x, 16) for x in LINE.match(lines[-1]).groups()[:3])
     assert dc == 0, lines
     assert abs(code - (T_NS - 30) / TAP_NS) <= 1, lines
-    assert abs(taps - T_NS / TAP_NS) <= 1, lines
+    #a fast die calibrates on half cycles, so a tap either way more
+    assert abs(taps - T_NS / TAP_NS) <= (1 if T_NS / TAP_NS < N else 2), lines
 
 
 @cocotb.test(skip=not TIMING)
@@ -165,7 +166,7 @@ async def code_tracks_sub_cycle_phase(dut):
         await gps(dut, 2, offset_ns=off)
         await ClockCycles(dut.clk, 1000)
         code = int(LINE.match(lines[-1]).group(2), 16)
-        want = (T_NS - off) / TAP_NS
+        want = min(N, (T_NS - off) / TAP_NS)
         assert abs(code - want) <= 1, (off, code, want)
 
 
