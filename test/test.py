@@ -172,11 +172,12 @@ async def code_tracks_sub_cycle_phase(dut):
 
 @cocotb.test(skip=GL)
 async def loop_locks_a_slow_oscillator(dut):
-    #clk 250 ppm slow, a dac step of 1 moves it 1 ppm
+    #clk 250 ppm slow, a dac step of 1 moves it 1 ppm. the pulse lands 5 ns
+    #after an edge, which a fast die's line cannot reach
     lines = await setup(dut)
     dac = lambda: int(dut.user_project.u_loop.dac.value)
     y = lambda: -2.5e-4 + 1e-6 * (dac() - 32768)
-    await gps(dut, 120, y=y)
+    await gps(dut, 120, offset_ns=5.0, y=y)
     assert bit(dut.uo_out, 3) == 1, lines[-5:]
     assert abs(y()) < 2e-5, (dac(), y())
 

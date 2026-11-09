@@ -128,7 +128,7 @@ module tt_um_kfilipekk_gpsdo (
                              (dc == 8'hFF)  ? -$signed({8'd0, taps}) :
                              $signed({{2{dc[7]}}, dc, 5'd0});
     wire signed [14:0] err = cyc + $signed({8'd0, code}) - $signed({8'd0, f_prev});
-    wire upd = hit && pps_ev && have && near && code != N;
+    wire upd = hit && pps_ev && have && near;
 
     always @(posedge clk)
         if (!rst_n) begin
@@ -146,7 +146,7 @@ module tt_um_kfilipekk_gpsdo (
                 //a jam put pcnt at JAM on the clock after the start
                 ph_prev <= jammed ? JAM[7:0] - 8'd1 : ph_now;
                 f_prev  <= code;
-                have    <= code != N;
+                have    <= 1'b1;
             end else if (hit && cal_ev && !busy)
                 f_prev  <= code;
             if (lost) have <= 1'b0;
