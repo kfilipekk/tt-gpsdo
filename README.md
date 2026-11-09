@@ -36,3 +36,9 @@ measurement independent of process corner.
 | `src/uart_tx.v` | telemetry at 115200 baud |
 | `src/project.v` | phase counter, self calibration, sigma-delta, telemetry |
 | `src/gpsdo.sdc` | false paths through the delay line and the ring |
+
+## Verification
+
+- `test/`: cocotb RTL tests, a gate level run, and a timing run with the
+  delay line annotated from the layout SDF at tt, ff and ss
+- `formal/`: SymbiYosys proofs of the TDC handshake and the voted integrator
