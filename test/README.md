@@ -56,11 +56,14 @@ a 60 clock reset, and takes the code from the first UART line. Codes and the
 
 | corner | 10 ns | 30 ns | 50 ns | 70 ns | 90 ns | tap     |
 | ------ | ----- | ----- | ----- | ----- | ----- | ------- |
-| tt     | 24    | 19    | 13    | 8     | 2     | 3.65 ns |
-| ff     | 44    | 35    | 24    | 15    | 5     | 1.98 ns |
-| ss     | 11    | 9     | 6     | 4     | 1     | 7.60 ns |
+| tt     | 24    | 19    | 14    | 8     | 2     | 3.63 ns |
+| ff     | 44    | 35    | 25    | 15    | 5     | 1.97 ns |
+| ss     | 12    | 9     | 6     | 4     | 1     | 7.56 ns |
 
-The ns per tap from the code against the offset is 3.64, 2.04 and 8.0, within
+The ns per tap from the code against the offset is 3.64, 2.0 and 7.3, within
 a tap or two of the SDF. At ff the 44 taps cover 87 ns, less than the 100 ns
 clock period, so a pulse more than 87 ns before the clock edge fills the
-line: the code reads 44 and smaller offsets cannot be told apart.
+line: the code reads 44 and smaller offsets cannot be told apart. The RTL
+tests cover that case with `make -B TAP_NS=2`, a fast die, where the
+calibration falls back to half cycles and the loop still locks with the
+pulse in the blind spot.

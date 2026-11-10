@@ -14,13 +14,15 @@ It also has holdover, a triplicated loop integrator, a ring oscillator
 process monitor and UART telemetry.
 
 It fills 94% of the 1x1 tile, with no setup or hold violations at any
-corner, and LVS, DRC and antenna clean.
+corner, and LVS, DRC and antenna clean, see the
+[gds workflow](../../actions/workflows/gds.yaml) for the reports.
 
 It is the ASIC version of [fpga_gps_clock](https://github.com/kfilipekk/fpga_gps_clock),
 a GPSDO with a carry chain TDC on a Tang Nano 9K. That board held an OCXO to
 0.05 ppb at 4096 s against GPS, measured in loop. Here the FPGA carry chain
-becomes a chain of `dlyd` cells, and the same self calibration makes the
-measurement independent of process corner.
+becomes a chain of `dlyd` cells, calibrated against the clock every second so
+process, voltage and temperature drop out. On a die fast enough that the line
+is shorter than a cycle it calibrates on half cycles instead.
 
 - [Datasheet: how it works, how to test, hardware](docs/info.md)
 - [Testbench](test/README.md)
@@ -41,4 +43,5 @@ measurement independent of process corner.
 
 - `test/`: cocotb RTL tests, a gate level run, and a timing run with the
   delay line annotated from the layout SDF at tt, ff and ss
-- `formal/`: SymbiYosys proofs of the TDC handshake and the voted integrator
+- `formal/`: SymbiYosys proofs by induction of the TDC handshake and the
+  voted, saturating integrator

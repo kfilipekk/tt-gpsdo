@@ -24,6 +24,18 @@ every second the chip sends a one clock pulse of its own down the same line.
 However many taps it covers by the next edge is one clock period, about 29
 taps, and that scales everything else. No trimming per chip.
 
+On a fast die (cold, high supply, fast process) 44 taps can be shorter than
+a clock period, about 87 ns at the ff corner. When the calibration pulse
+fills the line the chip launches it on the falling edge instead, measures
+half a cycle and doubles it, and goes back to full cycles once one fits with
+a few taps spare. A GPS pulse in the first ~13 ns after an edge then reads
+as a full line, 44, so the loop is blind to motion inside that sliver but
+still sees every whole cycle.
+
+The taps are sampled once and the result is used on the next clock, so a
+sample that goes metastable has most of a 100 ns period to settle. There is
+no second synchroniser stage, there is no room for 44 more flip-flops.
+
 ### Loop
 
 Each second gives the error in taps: whole cycles times taps per cycle, plus
@@ -36,8 +48,13 @@ the next clock. `GAIN` sets the scale from integrator to word.
 The word drives a first order sigma-delta on `EFC`, and an RC outside turns
 that into the tuning voltage. The top 8 bits are also on the uio pins.
 Before lock the counter is jammed to the GPS pulse so it pulls in from any
-phase. After two seconds with no pulse `HOLDOVER` goes high, the word freezes
-and `PPS_OUT` keeps going from the oscillator.
+phase. After two seconds with no pulse `HOLDOVER` goes high, `LOCKED` drops,
+the word freezes and `PPS_OUT` keeps going from the oscillator. When GPS
+comes back the counter is jammed to it again and the loop carries on from
+the frozen word.
+
+`HOLD`, `CAL` and `GAIN` are not synchronised, so change them with `HOLD`
+high, or accept that the second they change in may be skipped.
 
 ### Ring oscillator
 
