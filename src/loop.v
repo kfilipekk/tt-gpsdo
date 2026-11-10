@@ -65,4 +65,9 @@ module loop #(
             locked <= inwin && good >= LOCK_N[3:0] - 4'd1;
         end
 
+`ifdef FORMAL
+    loop_chk u_chk (.clk(clk), .rst_n(rst_n), .upd(upd), .hold(hold), .err(err),
+        .gain(gain), .i0(i0), .i1(i1), .i2(i2), .integ(integ), .d(d), .dac(dac));
+`endif
+
 endmodule

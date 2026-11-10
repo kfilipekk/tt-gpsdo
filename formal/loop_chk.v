@@ -38,7 +38,7 @@ module loop_chk (
                 2'd3:    w = iw >>> 2;
                 default: w = iw;
             endcase
-            dacof = (&w[20:15] || ~|w[20:15]) ? {16{~w[20]}} : {~w[15], w[14:0]};
+            dacof = (&w[20:15] || ~|w[20:15]) ? {~w[15], w[14:0]} : {16{~w[20]}};
         end
     endfunction
 
@@ -70,5 +70,3 @@ module loop_chk (
     end
 
 endmodule
-
-bind loop loop_chk u_chk (.*);
