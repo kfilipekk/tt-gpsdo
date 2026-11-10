@@ -59,9 +59,9 @@ high, or accept that the second they change in may be skipped.
 ### Ring oscillator
 
 31 inverters and a divider. `RING_MON` is the ring over 16384, which is a
-direct reading of how fast this die is. In `CAL` mode the TDC times ring
-edges instead of GPS, which sweeps every tap, and a histogram of the codes
-shows how wide each tap is.
+direct reading of how fast this die is. In `CAL` mode the TDC times the
+ring over 64 instead of GPS. Its edges are not related to the clock, so they
+land on every tap, and a histogram of the codes shows how wide each tap is.
 
 ### Telemetry
 
@@ -73,7 +73,8 @@ DD CC PP WWWW S
 
 `DD` is whole cycles short of nominal over the last second (signed), `CC` the
 fine code, `PP` taps per cycle, `WWWW` the word, and `S` the status bits
-have, cal, holdover, locked. In `CAL` mode each line is just `CC`.
+have, cal, holdover, locked. In `CAL` mode each line is just `CC`, for
+whichever edge comes in while the UART is free.
 
 The delay line and ring are false paths in `src/gpsdo.sdc`, since they are
 sampled asynchronously on purpose, and are kept from being resized.
@@ -88,7 +89,8 @@ Then, with just a clock:
 2. Pulse it once a second and each second prints a line. `PP` should be
    about 29 at room temperature, and `CC` moves as the pulse moves inside a
    clock cycle.
-3. Set `CAL`. The line now times ring edges and prints one code per edge.
+3. Set `CAL`. The line now times ring edges and prints a code each time
+   the UART is free, a few thousand a second.
 4. Set `RING_ON` and measure `RING_MON`, times 16384 is the ring frequency.
 
 In a real GPSDO the GPS PPS goes to `PPS`, the oscillator to `clk`, `EFC`
@@ -103,6 +105,18 @@ at 0, 2 and 3 are slower for a better oscillator.
 | CAL     | time ring edges instead of PPS                      |
 | RING_ON | run the ring oscillator                             |
 | GAIN    | 0 1:1, 1 x2, 2 /2, 3 /4 from integrator to DAC word |
+
+| Output   | Use                                               |
+| -------- | ------------------------------------------------- |
+| UART_TX  | telemetry, 115200 8n1                             |
+| EFC      | sigma-delta of the DAC word, RC it to the tuning pin |
+| PPS_OUT  | high for the first 125 ms of each second          |
+| LOCKED   | 15 seconds in a row within 8 taps                 |
+| HOLDOVER | no GPS pulse for two seconds                      |
+| RING_MON | ring oscillator over 16384                        |
+| PPS_SEEN | toggles on every GPS pulse                        |
+| LINE_IN  | what goes into the delay line, for a scope        |
+| DAC8-15  | top 8 bits of the DAC word, on the uio pins       |
 
 ## External hardware
 
