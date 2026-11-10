@@ -1,10 +1,10 @@
 [tasks]
-bmc
+prove
 cover
 
 [options]
-bmc: mode bmc
-bmc: depth 120
+prove: mode prove
+prove: depth 8
 cover: mode cover
 cover: depth 60
 
@@ -12,10 +12,11 @@ cover: depth 60
 smtbmc yices
 
 [script]
-read -formal tdc.v tdc_f.v cells.v
+read -formal tdc_chk.v tdc.v tdc_f.v cells.v
 prep -top tdc_f
 
 [files]
 ../src/tdc.v
+tdc_chk.v
 tdc_f.v
 cells.v

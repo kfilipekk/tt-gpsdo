@@ -67,4 +67,9 @@ module tdc #(
                 empty <= ~|snap;
         end
 
+`ifdef FORMAL
+    tdc_chk #(.N(N)) u_chk (.clk(clk), .rst_n(rst_n), .start(start), .hit(hit),
+        .code(code), .busy(busy), .left(left));
+`endif
+
 endmodule
