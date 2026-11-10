@@ -16,6 +16,7 @@ module loop #(
     input  wire signed [EW-1:0] err,
     input  wire [1:0]           gain,
     input  wire                 hold,
+    input  wire                 clr,    //holdover drops lock
     output reg  [15:0]          dac,
     output reg                  locked
 );
@@ -56,7 +57,7 @@ module loop #(
     reg [3:0] good;
 
     always @(posedge clk)
-        if (!rst_n) begin
+        if (!rst_n || clr) begin
             good   <= 4'd0;
             locked <= 1'b0;
         end else if (upd) begin

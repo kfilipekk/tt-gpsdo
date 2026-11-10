@@ -180,6 +180,12 @@ async def loop_locks_a_slow_oscillator(dut):
     await gps(dut, 120, offset_ns=5.0, y=y)
     assert bit(dut.uo_out, 3) == 1, lines[-5:]
     assert abs(y()) < 2e-5, (dac(), y())
+    #holdover drops lock, and it comes back once gps does
+    await ClockCycles(dut.clk, 3 * NOM)
+    assert bit(dut.uo_out, 4) == 1 and bit(dut.uo_out, 3) == 0
+    await gps(dut, 30, offset_ns=5.0, y=y)
+    assert bit(dut.uo_out, 3) == 1, lines[-5:]
+    assert abs(y()) < 2e-5, (dac(), y())
 
 
 @cocotb.test(skip=GL)

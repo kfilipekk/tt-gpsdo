@@ -155,7 +155,7 @@ module tt_um_kfilipekk_gpsdo (
     wire [15:0] dac;
     loop u_loop (
         .clk(clk), .rst_n(rst_n), .upd(upd), .err(err), .gain(gain),
-        .hold(hold_in || lost), .dac(dac), .locked(locked)
+        .hold(hold_in || lost), .clr(lost), .dac(dac), .locked(locked)
     );
 
     reg [16:0] acc;
