@@ -25,10 +25,11 @@ However many taps it covers by the next edge is one clock period, about 29
 taps, and that scales everything else. No trimming per chip.
 
 On a fast die (cold, high supply, fast process) 44 taps can be shorter than
-a clock period, about 87 ns at the ff corner. When the calibration pulse
+a clock period, about 89 ns at the ff corner. When the calibration pulse
 fills the line the chip launches it on the falling edge instead, measures
 half a cycle and doubles it, and goes back to full cycles once one fits with
-a few taps spare. A GPS pulse in the first ~13 ns after an edge then reads
+a few taps spare. That assumes the clock is close to 50% duty, an error there
+only scales the loop gain. A GPS pulse in the first ~11 ns after an edge then reads
 as a full line, 44, so the loop is blind to motion inside that sliver but
 still sees every whole cycle.
 
@@ -142,7 +143,9 @@ at 0, 2 and 3 are slower for a better oscillator.
 
 ## External hardware
 
-- GPS receiver with a PPS output, e.g. a u-blox NEO-M8N
+- GPS receiver with a PPS output, e.g. a u-blox NEO-M8N. The pulse has to
+  be low again before half a second, when the calibration pulse goes in, the
+  usual 100 ms is fine
 - 10 MHz voltage controlled oscillator (OCXO or VCTCXO) as the clock
 - RC low pass from `EFC` to the tuning pin, e.g. 10 kΩ and 10 µF, scaled to
   the oscillator's tuning range
