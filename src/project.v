@@ -129,7 +129,7 @@ module tt_um_kfilipekk_gpsdo (
         else if (wrap && !lost)  wraps <= wraps + 2'd1;
 
     //phase error over the last second in taps, positive when clk is slow:
-    //cycles short of nominal times taps per cycle, plus the change in code
+    //cycles short of nominal times taps per cycle, plus the change in code.
     //it pulls in from up to 63 clocks a second either way, 6 ppm
     wire [7:0] dc   = ph_prev - ph_now;
     wire       near = dc[7:6] == 2'b00 || dc[7:6] == 2'b11;
@@ -149,13 +149,15 @@ module tt_um_kfilipekk_gpsdo (
             have    <= 1'b0;
             jammed  <= 1'b0;
         end else begin
+            //the last phase moves back as the next pulse comes in, so dc holds
+            //for the whole second the line is sent in. a jam put pcnt at JAM
+            //on the clock after the start
             if (pps_start) begin
-                ph_now <= ph;
-                jammed <= !locked;
+                ph_prev <= jammed ? JAM[7:0] - 8'd1 : ph_now;
+                ph_now  <= ph;
+                jammed  <= !locked;
             end
             if (hit && pps_ev) begin
-                //a jam put pcnt at JAM on the clock after the start
-                ph_prev <= jammed ? JAM[7:0] - 8'd1 : ph_now;
                 f_prev  <= code;
                 have    <= 1'b1;
             end else if (hit && cal_ev && !busy)
@@ -193,8 +195,6 @@ module tt_um_kfilipekk_gpsdo (
         hx = (v < 4'd10) ? 8'h30 + {4'd0, v} : 8'h37 + {4'd0, v};
     endfunction
 
-    //cycles short, clamped to what two hex digits can show
-    wire       dc_big = !(&dc[9:7] || ~|dc[9:7]);
     wire [7:0] dc_tx  = have ? dc : 8'd0;
     wire [3:0] status = {have, cal, lost, locked};
 

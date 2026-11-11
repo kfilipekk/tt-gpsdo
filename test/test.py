@@ -157,6 +157,19 @@ async def real_delays_move_the_code(dut):
 
 
 @cocotb.test(skip=GL)
+async def telemetry_shows_a_step_when_locked(dut):
+    #once locked the pulse jumps a couple of clocks, and dd has to say so
+    lines = await setup(dut)
+    await gps(dut, 25)
+    assert bit(dut.uo_out, 3) == 1
+    n = len(lines)
+    await gps(dut, 3, offset_ns=130.0)
+    await ClockCycles(dut.clk, 200)
+    dd = [int(LINE.match(l).group(1), 16) for l in lines[n:]]
+    assert dd[0] != 0 and dd[1:] == [0, 0], lines[n:]
+
+
+@cocotb.test(skip=GL)
 async def code_tracks_sub_cycle_phase(dut):
     lines = await setup(dut)
     for off in (10.0, 50.0, 90.0):
