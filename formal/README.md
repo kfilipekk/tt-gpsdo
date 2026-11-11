@@ -5,6 +5,7 @@ SymbiYosys proofs, run from this directory with the oss-cad-suite tools:
 ```sh
 sby -f tdc.sby
 sby -f loop.sby
+sby -f top.sby
 ```
 
 The checkers are instantiated inside `tdc` and `loop` under `ifdef FORMAL`,
@@ -26,7 +27,18 @@ bubbles included.
   a flip-flop with a free fault input. The flip never reaches the vote and is
   gone a clock later.
 
+- **top.sby** (k-induction, the real 10 MHz second): the counter stays
+  inside a second, the top half flag matches the count, the phase is the low
+  byte of the offset from the nearest wrap and moves by exactly one a clock
+  across the wrap, a jam puts the counter at 8, holdover counts at most two
+  empty seconds, and the `DD` telemetry only changes when a pulse comes in.
+  The ring is a free stand-in here (`ring_f.v`), a closed inverter loop has
+  no formal meaning.
+
 Each proof was checked against deliberate bugs, a tap short in the TDC count,
-a broken voter, no saturation, a wrong clamp and a copy that is never
-reloaded, and fails on every one. The fault model is an upset in one copy,
-not a stuck or metastable cell, and the loop proofs use the default widths.
+a broken voter, no saturation, a wrong clamp, a copy that is never reloaded,
+and for the top level the two real bugs found in review (the phase aliasing
+at the wrap and the stuck `DD`), a flag set a clock early, a wrong jam count
+and a holdover that overcounts. None of them proves. The fault model is an
+upset in one copy, not a stuck or metastable cell, and the loop proofs use
+the default widths.

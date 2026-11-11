@@ -43,5 +43,6 @@ is shorter than a cycle it calibrates on half cycles instead.
 
 - `test/`: cocotb RTL tests, a gate level run, and a timing run with the
   delay line annotated from the layout SDF at tt, ff and ss
-- `formal/`: SymbiYosys proofs by induction of the TDC handshake and the
-  voted, saturating integrator, run in CI
+- `formal/`: SymbiYosys proofs by induction of the TDC handshake, the
+  voted, saturating integrator and the top level phase counter at the real
+  10 MHz second, run in CI
