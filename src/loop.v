@@ -7,7 +7,7 @@
 module loop #(
     parameter EW = 15,
     parameter IW = 19,
-    parameter [EW-1:0] LOCK_ERR = 8,
+    parameter [EW-1:0] LOCK_ERR = 24,
     parameter LOCK_N = 15
 ) (
     input  wire                 clk,
@@ -54,15 +54,21 @@ module loop #(
         dac = sat ? {16{~w[IW+1]}} : {~w[15], w[14:0]};
 
     wire inwin = (err < $signed(LOCK_ERR)) && (err > -$signed(LOCK_ERR));
+    //lock after LOCK_N good seconds in a row, and only let go after three
+    //bad ones, so gps jitter does not flap it
     reg [3:0] good;
+    reg [1:0] bad;
 
     always @(posedge clk)
         if (!rst_n || clr) begin
             good   <= 4'd0;
+            bad    <= 2'd0;
             locked <= 1'b0;
         end else if (upd) begin
-            good   <= !inwin ? 4'd0 : (good == LOCK_N[3:0]) ? good : good + 4'd1;
-            locked <= inwin && good >= LOCK_N[3:0] - 4'd1;
+            good <= !inwin ? 4'd0 : (good == LOCK_N[3:0]) ? good : good + 4'd1;
+            bad  <= inwin ? 2'd0 : (bad == 2'd3) ? bad : bad + 2'd1;
+            if (inwin && good >= LOCK_N[3:0] - 4'd1) locked <= 1'b1;
+            else if (!inwin && bad == 2'd2)          locked <= 1'b0;
         end
 
 `ifdef FORMAL
