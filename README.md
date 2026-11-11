@@ -13,7 +13,7 @@ GlobalFoundries 180 nm. It:
 It also has holdover, a triplicated loop integrator, a ring oscillator
 process monitor and UART telemetry.
 
-It fills 94% of the 1x1 tile, with no setup or hold violations at any
+It fills 92% of the 1x1 tile, with no setup or hold violations at any
 corner, and LVS, DRC and antenna clean, see the
 [gds workflow](../../actions/workflows/gds.yaml) for the reports.
 
