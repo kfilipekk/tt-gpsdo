@@ -15,6 +15,7 @@ tests cover:
 - the sub-cycle code and self calibration
 - lock from 50 clocks a second slow and fast, 5 ppm at 10 MHz, and from 10
 - holdover, and relock after it with the pulse in a fast die's blind spot
+- a PPS held high through reset not being taken as an edge
 - a flipped integrator bit being outvoted
 - the cal mode code stream
 

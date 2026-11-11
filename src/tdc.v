@@ -39,7 +39,7 @@ module tdc #(
     always @(posedge clk)
         if (!rst_n) begin
             busy  <= 1'b0;
-            empty <= 1'b1;
+            empty <= 1'b0;  //the line has to be seen empty before a start
             start <= 1'b0;
             hit   <= 1'b0;
             stale <= 1'b0;

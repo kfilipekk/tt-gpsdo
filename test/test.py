@@ -217,6 +217,19 @@ async def relocks_after_holdover(dut):
 
 
 @cocotb.test(skip=GL)
+async def pps_high_through_reset_is_not_an_edge(dut):
+    lines = await setup(dut, ui=1)
+    seen = bit(dut.uo_out, 6)
+    await ClockCycles(dut.clk, 200)
+    assert bit(dut.uo_out, 6) == seen and not lines
+    dut.ui_in.value = 0
+    await ClockCycles(dut.clk, 100)
+    cocotb.start_soon(pulse(dut))
+    await ClockCycles(dut.clk, 100)
+    assert bit(dut.uo_out, 6) != seen
+
+
+@cocotb.test(skip=GL)
 async def holdover_when_pps_stops(dut):
     lines = await setup(dut)
     await gps(dut, 3)
