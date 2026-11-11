@@ -1,0 +1,24 @@
+[options]
+mode prove
+depth 16
+multiclock on
+
+[engines]
+smtbmc yices
+
+[script]
+read -formal tdc_chk.v loop_chk.v top_chk.v
+read -formal project.v tdc.v loop.v tmr_reg.v uart_tx.v ring_f.v cells.v
+prep -top tt_um_kfilipekk_gpsdo
+
+[files]
+tdc_chk.v
+loop_chk.v
+top_chk.v
+../src/project.v
+../src/tdc.v
+../src/loop.v
+../src/tmr_reg.v
+../src/uart_tx.v
+ring_f.v
+cells.v

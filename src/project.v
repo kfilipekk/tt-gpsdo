@@ -253,4 +253,10 @@ module tt_um_kfilipekk_gpsdo (
 
     wire _unused = &{ena, uio_in, ui_in[7:6], rdiv[8:6], rdiv[4:0], 1'b0};
 
+`ifdef FORMAL
+    top_chk #(.NOM(NOM), .JAM(JAM)) u_chk (.clk(clk), .rst_n(rst_n), .pcnt(pcnt),
+        .upper(upper), .ph(ph), .pps_start(pps_start), .locked(locked),
+        .wraps(wraps), .dc(dc));
+`endif
+
 endmodule
