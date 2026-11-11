@@ -32,7 +32,7 @@ module tt_um_kfilipekk_gpsdo (
     localparam [6:0]  DIV = 7'd87;  //115200 baud
 `endif
 
-    wire [13:0] rdiv;
+    wire [9:0] rdiv;
     ring u_ring (.rst_n(rst_n), .en(ring_on), .div(rdiv));
 
     //phase counter, wraps once a nominal second. it is the pps output and
@@ -247,10 +247,10 @@ module tt_um_kfilipekk_gpsdo (
         .ready(tx_ready), .tx(tx)
     );
 
-    assign uo_out  = {line_in, seen, rdiv[13], lost, locked, pps_out, efc, tx};
+    assign uo_out  = {line_in, seen, rdiv[9], lost, locked, pps_out, efc, tx};
     assign uio_out = dac[15:8];
     assign uio_oe  = 8'hFF;
 
-    wire _unused = &{ena, uio_in, ui_in[7:6], rdiv[12:6], rdiv[4:0], 1'b0};
+    wire _unused = &{ena, uio_in, ui_in[7:6], rdiv[8:6], rdiv[4:0], 1'b0};
 
 endmodule

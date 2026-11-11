@@ -4,7 +4,7 @@
 
 module ring #(
     parameter STAGES = 31,  //odd, the nand counts as one
-    parameter DIV    = 14
+    parameter DIV    = 10
 ) (
     input  wire           rst_n,
     input  wire           en,
