@@ -20,8 +20,10 @@ tests cover:
 - the cal mode code stream
 
 Gate level runs the real 10 MHz design on the hardened netlist. The PDK cell
-models have no delay, so the line reads full, and only the first pulse is
-checked there. Copy the netlist from
+models have no delay, so the line reads full. It checks the first pulse,
+and reads the netlist to make sure every integrator bit is still three
+separate flip-flops on separate nets, so the voting survived synthesis and
+layout. Copy the netlist from
 `runs/wokwi/final/pnl/tt_um_kfilipekk_gpsdo.pnl.v` to `gate_level_netlist.v`,
 then:
 

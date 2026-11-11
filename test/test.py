@@ -4,7 +4,8 @@
 #rtl runs with SIM_SHORT: a second of 1664 clocks, the same remainder mod
 #256 as 10 mhz so the wrap is exercised, and 4 clocks a uart bit.
 #gate level runs the real 10 mhz design on zero delay cells, so the delay
-#line reads full and only the first pulse is checked there
+#line reads full. it checks the first pulse, and that the netlist kept the
+#three integrator copies apart
 
 import os
 import re
@@ -270,6 +271,20 @@ async def one_flipped_bit_is_outvoted(dut):
     await ClockCycles(dut.clk, 2)
     assert int(loop.dac.value) == before
     assert int(ff.Q.value) == int(loop.u_r0.b[12].u_ff.Q.value)
+
+
+@cocotb.test(skip=not GL or TIMING)
+async def tmr_copies_survive_layout(dut):
+    #the hardened netlist still has three separate flip-flops for every
+    #integrator bit, each driving its own net into the vote
+    net = open(os.path.join(os.path.dirname(__file__), "gate_level_netlist.v")).read()
+    ffs = re.findall(r"dffq_1\s+\\u_loop\.u_r(\d)\.b\[(\d+)\]\.u_ff\s*\((.*?)\);", net, re.S)
+    q = {}
+    for copy, b, pins in ffs:
+        q.setdefault(int(b), set()).add(re.search(r"\.Q\(([^)]*)\)", pins).group(1).strip())
+    assert sorted(q) == list(range(19)), sorted(q)
+    assert all(len(v) == 3 for v in q.values()), q
+    assert len(ffs) == 57
 
 
 @cocotb.test(skip=GL)
