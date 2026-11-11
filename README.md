@@ -1,4 +1,4 @@
-![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg)
+![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/formal/badge.svg)
 
 # GPS disciplined oscillator on GF180
 
@@ -44,4 +44,4 @@ is shorter than a cycle it calibrates on half cycles instead.
 - `test/`: cocotb RTL tests, a gate level run, and a timing run with the
   delay line annotated from the layout SDF at tt, ff and ss
 - `formal/`: SymbiYosys proofs by induction of the TDC handshake and the
-  voted, saturating integrator
+  voted, saturating integrator, run in CI
