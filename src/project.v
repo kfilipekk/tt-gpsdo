@@ -17,11 +17,19 @@ module tt_um_kfilipekk_gpsdo (
 
     localparam N = 44;
 
+    //the mode inputs go through two flops, pps does not, its edge is what
+    //the delay line times
+    reg  [3:0] mode_m, mode;
+    always @(posedge clk) begin
+        mode_m <= {ui_in[5:4], ui_in[2:1]};
+        mode   <= mode_m;
+    end
+
     wire       pps_in  = ui_in[0];
-    wire       hold_in = ui_in[1];
-    wire       cal     = ui_in[2];
-    wire       ring_on = ui_in[3] | cal;
-    wire [1:0] gain    = ui_in[5:4];
+    wire       hold_in = mode[0];
+    wire       cal     = mode[1];
+    wire       ring_on = ui_in[3] | ui_in[2];
+    wire [1:0] gain    = mode[3:2];
 
     //a 10 mhz second. SIM_SHORT shrinks it for rtl simulation only
 `ifdef SIM_SHORT
