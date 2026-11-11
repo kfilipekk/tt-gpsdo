@@ -14,3 +14,4 @@ jobs:
         run: |
           sby -f tdc.sby
           sby -f loop.sby
+          sby -f top.sby

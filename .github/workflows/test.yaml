@@ -9,19 +9,12 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install iverilog
-        shell: bash
-        run: sudo apt-get update && sudo apt-get install -y iverilog
-
-      # Set Python up and install cocotb
-      - name: Setup python
-        uses: actions/setup-python@v6
+      #iverilog and cocotb from oss-cad-suite, the same as the formal job,
+      #so the tests do not hang on the ubuntu mirror
+      - uses: YosysHQ/setup-oss-cad-suite@v3
         with:
-          python-version: '3.11'
-
-      - name: Install Python packages
-        shell: bash
-        run: pip install -r test/requirements.txt
+          version: '2026-07-19'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
         run: |
@@ -29,7 +22,7 @@ jobs:
           make clean
           make
           # make will return success even if the tests fail, so check results.xml for failed tests
-          python -m cocotb_tools.check_results results.xml
+          python3 -m cocotb_tools.check_results results.xml
 
       - name: Test Summary
         uses: test-summary/action@v2.4
