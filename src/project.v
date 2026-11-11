@@ -25,7 +25,7 @@ module tt_um_kfilipekk_gpsdo (
 
     //a 10 mhz second. SIM_SHORT shrinks it for rtl simulation only
 `ifdef SIM_SHORT
-    localparam [23:0] NOM = 24'd2000;
+    localparam [23:0] NOM = 24'd1664;  //same remainder mod 1024 as 10 mhz
     localparam [6:0]  DIV = 7'd4;
 `else
     localparam [23:0] NOM = 24'd10000000;
@@ -39,6 +39,7 @@ module tt_um_kfilipekk_gpsdo (
     //the coarse timebase, so missed pulses alias back onto the right phase
     reg [23:0] pcnt;
     reg        launch, launch_n, half, l1, l2;
+    wire       mid = pcnt == NOM / 2;
     wire       line_in = (pps_in & !cal) | (half ? launch_n : launch) | (rdiv[5] & cal);
 
     wire       start, hit;
@@ -55,7 +56,7 @@ module tt_um_kfilipekk_gpsdo (
             l1     <= 1'b0;
             l2     <= 1'b0;
         end else begin
-            launch <= !cal && pcnt == NOM / 2;
+            launch <= !cal && mid;
             l1     <= launch;
             l2     <= l1;
         end
@@ -103,7 +104,7 @@ module tt_um_kfilipekk_gpsdo (
     reg       busy;
     reg [7:0] ph_now, ph_prev;
     reg [6:0] f_prev;
-    reg       have, jammed;
+    reg       have, jammed, upper;
     reg [1:0] wraps;
 
     always @(posedge clk)
@@ -111,6 +112,15 @@ module tt_um_kfilipekk_gpsdo (
         else if (pps_start && !locked)    pcnt <= JAM;
         else if (wrap)                    pcnt <= 24'd0;
         else                              pcnt <= pcnt + 24'd1;
+
+    //the phase is kept as the low byte of the offset from the nearest wrap.
+    //a second is 128 mod 256 clocks, so the top half of the count has that
+    //taken off, which only flips bit 7, else a pulse either side of the
+    //wrap would look 128 clocks apart
+    always @(posedge clk)
+        if (!rst_n || wrap || (pps_start && !locked)) upper <= 1'b0;
+        else if (mid)                                 upper <= 1'b1;
+    wire [7:0] ph = {pcnt[7] ^ (upper & NOM[7]), pcnt[6:0]};
 
     //holdover once two seconds pass without a pulse
     wire lost = wraps[1];
@@ -120,6 +130,7 @@ module tt_um_kfilipekk_gpsdo (
 
     //phase error over the last second in taps, positive when clk is slow:
     //cycles short of nominal times taps per cycle, plus the change in code
+    //it pulls in from up to 63 clocks a second either way, 6 ppm
     wire [7:0] dc   = ph_prev - ph_now;
     wire       near = dc[7:6] == 2'b00 || dc[7:6] == 2'b11;
     //inside a cycle either way the step is exact, further out cycles times
@@ -139,7 +150,7 @@ module tt_um_kfilipekk_gpsdo (
             jammed  <= 1'b0;
         end else begin
             if (pps_start) begin
-                ph_now <= pcnt[7:0];
+                ph_now <= ph;
                 jammed <= !locked;
             end
             if (hit && pps_ev) begin
@@ -182,6 +193,8 @@ module tt_um_kfilipekk_gpsdo (
         hx = (v < 4'd10) ? 8'h30 + {4'd0, v} : 8'h37 + {4'd0, v};
     endfunction
 
+    //cycles short, clamped to what two hex digits can show
+    wire       dc_big = !(&dc[9:7] || ~|dc[9:7]);
     wire [7:0] dc_tx  = have ? dc : 8'd0;
     wire [3:0] status = {have, cal, lost, locked};
 

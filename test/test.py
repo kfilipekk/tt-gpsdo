@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: © 2026 Krystian Filipek
 # SPDX-License-Identifier: Apache-2.0
 
-#rtl runs with SIM_SHORT: a second of 2000 clocks and 4 clocks a uart bit.
+#rtl runs with SIM_SHORT: a second of 1664 clocks, the same remainder mod
+#256 as 10 mhz so the wrap is exercised, and 4 clocks a uart bit.
 #gate level runs the real 10 mhz design on zero delay cells, so the delay
 #line reads full and only the first pulse is checked there
 
@@ -16,7 +17,7 @@ GL = os.environ.get("GATES") == "yes"
 TIMING = os.environ.get("TIMING") == "yes"
 SDF = os.environ.get("TIMING_SDF", "")
 T_NS = 100
-NOM = 2000
+NOM = 1664
 BIT = 4 if not GL else 87
 TAP_NS = float(os.environ.get("TAP_NS", "3.4"))  #dlyd stand-in in cells.v
 N = 44
@@ -170,22 +171,49 @@ async def code_tracks_sub_cycle_phase(dut):
         assert abs(code - want) <= 1, (off, code, want)
 
 
+async def lock(dut, lines, slip, secs, off=30.0):
+    #clk slip clocks a second off nominal, positive slow, and a dac step of
+    #one moves it half the error a second would
+    dut.rst_n.value = 0
+    await ClockCycles(dut.clk, 60)
+    dut.rst_n.value = 1
+    dac = lambda: int(dut.user_project.u_loop.dac.value)
+    g = 0.5 / (NOM * T_NS / TAP_NS)
+    y = lambda: -slip / NOM + g * (dac() - 32768)
+    await gps(dut, secs, offset_ns=off, y=y)
+    assert bit(dut.uo_out, 3) == 1, (slip, lines[-3:])
+    assert abs(y() * NOM) < 0.2, (slip, y() * NOM, lines[-3:])
+    return y
+
+
 @cocotb.test(skip=GL)
-async def loop_locks_a_slow_oscillator(dut):
-    #clk 250 ppm slow, a dac step of 1 moves it 1 ppm. the pulse lands 5 ns
-    #after an edge, which a fast die's line cannot reach
+async def loop_locks_either_side(dut):
+    #50 clocks a second is 5 ppm at 10 mhz, either side of the wrap
+    lines = await setup(dut)
+    for slip in (50, -50, 10, -10):
+        await lock(dut, lines, slip, 60)
+
+
+@cocotb.test(skip=GL)
+async def too_far_off_never_claims_lock(dut):
+    #100 clocks a second is outside the window, it must not lock onto an alias
     lines = await setup(dut)
     dac = lambda: int(dut.user_project.u_loop.dac.value)
-    y = lambda: -2.5e-4 + 1e-6 * (dac() - 32768)
-    await gps(dut, 120, offset_ns=5.0, y=y)
-    assert bit(dut.uo_out, 3) == 1, lines[-5:]
-    assert abs(y()) < 2e-5, (dac(), y())
-    #holdover drops lock, and it comes back once gps does
+    g = 0.5 / (NOM * T_NS / TAP_NS)
+    await gps(dut, 40, y=lambda: -100 / NOM + g * (dac() - 32768))
+    assert bit(dut.uo_out, 3) == 0, lines[-3:]
+
+
+@cocotb.test(skip=GL)
+async def relocks_after_holdover(dut):
+    #the pulse lands 5 ns after an edge, which a fast die's line cannot reach
+    lines = await setup(dut)
+    y = await lock(dut, lines, 30, 60, off=5.0)
     await ClockCycles(dut.clk, 3 * NOM)
     assert bit(dut.uo_out, 4) == 1 and bit(dut.uo_out, 3) == 0
     await gps(dut, 30, offset_ns=5.0, y=y)
-    assert bit(dut.uo_out, 3) == 1, lines[-5:]
-    assert abs(y()) < 2e-5, (dac(), y())
+    assert bit(dut.uo_out, 3) == 1
+    assert abs(y() * NOM) < 0.2
 
 
 @cocotb.test(skip=GL)

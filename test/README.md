@@ -6,13 +6,15 @@ cocotb tests in [test.py](test.py), run with iverilog.
 make -B
 ```
 
-RTL runs with `SIM_SHORT`, which gives a second of 2000 clocks and 4 clocks
+RTL runs with `SIM_SHORT`, which gives a second of 1664 clocks and 4 clocks
 per UART bit, and with [cells.v](cells.v), which models the delay and ring
-cells with real delays. The tests cover:
+cells with real delays. 1664 leaves the same remainder mod 256 as 10 MHz, so
+the counter wrap the phase arithmetic has to handle is the real one. The
+tests cover:
 
 - the sub-cycle code and self calibration
-- lock of a 250 ppm slow oscillator
-- holdover
+- lock from 50 clocks a second slow and fast, 5 ppm at 10 MHz, and from 10
+- holdover, and relock after it with the pulse in a fast die's blind spot
 - a flipped integrator bit being outvoted
 - the cal mode code stream
 
