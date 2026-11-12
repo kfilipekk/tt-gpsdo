@@ -32,6 +32,22 @@ is shorter than a cycle it calibrates on half cycles instead.
 - [Datasheet: how it works, how to test, hardware](docs/info.md)
 - [Testbench](test/README.md)
 
+## Simulation
+
+![TDC code against where the pulse lands, at three corners](docs/tdc_corners.png)
+
+The TDC on the hardened netlist with layout delays: the code falls one tap per
+tap delay as the pulse lands later in the cycle, at 3.7 ns a tap typical, 2.0
+fast and 7.7 slow. On the fast corner the 44 taps are shorter than a cycle, so
+the first ~12 ns after an edge read as a full line.
+
+![Frequency error each second while pulling in from 5 ppm slow and fast](docs/lock.png)
+
+Pull-in from 50 clocks a second either side, 5 ppm at 10 MHz, in the RTL
+sim with a model oscillator. Both cross the counter wrap the phase arithmetic
+has to handle, and `LOCKED` comes on after 15 good seconds. How fast it
+settles depends on the real oscillator's tuning slope and `GAIN`.
+
 ## Source
 
 | Block | What |
