@@ -17,6 +17,11 @@ It fills 95% of the 1x1 tile, with no setup or hold violations at any
 corner, and LVS, DRC and antenna clean, see the
 [gds workflow](../../actions/workflows/gds.yaml) for the reports.
 
+![The hardened 1x1 tile, metal 1 blue, metal 2 pink, metal 3 cyan, power straps orange and white](docs/layout.jpg)
+
+The hardened tile, 347 x 161 µm. There is also a
+[3D viewer](https://kfilipekk.github.io/tt-gpsdo).
+
 It is the ASIC version of [fpga_gps_clock](https://github.com/kfilipekk/fpga_gps_clock),
 a GPSDO with a carry chain TDC on a Tang Nano 9K. That board held an OCXO to
 0.05 ppb at 4096 s against GPS, measured in loop. Here the FPGA carry chain
@@ -27,7 +32,7 @@ is shorter than a cycle it calibrates on half cycles instead.
 - [Datasheet: how it works, how to test, hardware](docs/info.md)
 - [Testbench](test/README.md)
 
-## Layout
+## Source
 
 | Block | What |
 | --- | --- |
