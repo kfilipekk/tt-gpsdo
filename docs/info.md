@@ -1,11 +1,17 @@
 ## How it works
 
-This is the controller half of a GPS disciplined oscillator. The chip clock
-is a 10 MHz oscillator with a tuning pin (an OCXO or VCTCXO), and a GPS
-receiver gives a pulse every second that is good to a few tens of ns. The
-chip measures where each pulse lands against its own clock and tunes the
-oscillator until the two agree, so over hours the oscillator ends up as
-accurate as GPS. If GPS drops out it keeps counting on its own.
+This is the controller half of a GPS disciplined oscillator (GPSDO). 
+
+In precision frequency and timing, there is a classic trade-off:
+- **Local crystal oscillators (OCXO or VCTCXO)** have excellent **short-term stability and low phase noise**, but they drift over hours and days due to temperature changes and aging.
+- **GPS 1PPS signals** are steered by satellite atomic clocks and have **zero long-term drift**, but each individual pulse suffers from **short-term jitter** (10–30 ns) caused by ionospheric delay and receiver quantization.
+
+A GPSDO bridges these two characteristics: a slow, low-noise control loop filters out the short-term GPS jitter while continuously steering the local oscillator. The result is the clean, low-jitter output of a crystal oscillator combined with the long-term atomic accuracy of GPS. Over hours and days, the oscillator ends up as accurate as GPS. If GPS drops out, the chip enters holdover mode and keeps counting on its own.
+
+### Applications
+- **Lab Master Clock**: 10 MHz reference for frequency counters, spectrum analyzers, and RF sources.
+- **SDR & Amateur Radio**: Rock-solid local oscillator for microwave transverters (10 GHz+) and narrowband digital modes (WSPR, FT8).
+- **Timekeeping**: Precision 1PPS source for Stratum-1 NTP and PTP servers.
 
 ### Timing the pulse
 

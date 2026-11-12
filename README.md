@@ -2,16 +2,16 @@
 
 # GPS disciplined oscillator on GF180
 
-This is a GPSDO controller that fits in one Tiny Tapeout tile on
-GlobalFoundries 180 nm. It:
+This is a complete GPSDO controller that fits in a single Tiny Tapeout 1x1
+tile on GlobalFoundries 180 nm. It:
 
-- times each GPS pulse to a fraction of a clock cycle with an on-chip delay
-  line
-- calibrates that line against the clock every second
-- steers a 10 MHz oscillator through a sigma-delta DAC
+- times each GPS pulse to a fraction of a clock cycle with an on-chip delay line (~3.4 ns resolution)
+- calibrates that line against the clock every second against PVT variations
+- steers a 10 MHz oscillator (OCXO or VCTCXO) through a 16-bit sigma-delta DAC
+- supports both positive and negative oscillator tuning slopes (`INV_SLOPE`)
 
-It also has holdover, a triplicated loop integrator, a ring oscillator
-process monitor and UART telemetry.
+It also features automatic holdover, a radiation-hardened triplicated (TMR) loop integrator,
+an on-die ring oscillator process monitor, and real-time ASCII telemetry over UART.
 
 It fills 95% of the 1x1 tile, with no setup or hold violations at any
 corner, and LVS, DRC and antenna clean, see the
@@ -21,6 +21,22 @@ corner, and LVS, DRC and antenna clean, see the
 
 The hardened tile, 347 x 161 µm. There is also a
 [3D viewer](https://kfilipekk.github.io/tt-gpsdo).
+
+## Why a GPSDO?
+
+High-precision timing faces a fundamental physics trade-off:
+
+* **Crystal oscillators (OCXO / TCXO)** have **superb short-term stability and ultra-low phase noise** over milliseconds to seconds, but they suffer from **thermal drift and physical aging** over hours, days, and months.
+* **GPS satellite signals** are steered by onboard cesium/rubidium atomic clocks and have **zero long-term drift**, but individual pulses suffer from **short-term jitter** (10–30 ns from atmospheric variations and receiver clock quantization).
+
+A **GPS Disciplined Oscillator (GPSDO)** locks the two together to get the best of both worlds:
+1. **Short term ($\tau < 10\text{ s}$)**: The clean, jitter-free phase noise of the local crystal oscillator.
+2. **Long term ($\tau > 100\text{ s}$)**: The drift-free atomic precision of GPS, achieving parts-per-billion (ppb) to parts-per-trillion (ppt) frequency accuracy over hours and years.
+
+### Practical Applications
+* **Bench Reference Clock**: Master 10 MHz frequency standard for lab equipment (frequency counters, spectrum analyzers, oscilloscopes, signal generators) without needing an expensive rubidium or cesium beam standard.
+* **Software-Defined Radio (SDR) & RF**: Stable local oscillator for microwave transverters (10 GHz+), satellite ground stations, and narrowband digital amateur radio modes (FT8, WSPR) where even a 1 Hz drift drops decode packets.
+* **Network Timekeeping**: Accurate timebase for Stratum-1 NTP and IEEE 1588 PTP servers in telecommunications and data centers.
 
 It is the ASIC version of [fpga_gps_clock](https://github.com/kfilipekk/fpga_gps_clock),
 a GPSDO with a carry chain TDC on a Tang Nano 9K. That board held an OCXO to
