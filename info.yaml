@@ -29,7 +29,7 @@ pinout:
   ui[3]: "RING_ON"
   ui[4]: "GAIN0"
   ui[5]: "GAIN1"
-  ui[6]: ""
+  ui[6]: "INV_SLOPE"
   ui[7]: ""
 
   # Outputs

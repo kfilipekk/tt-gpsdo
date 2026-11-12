@@ -19,17 +19,18 @@ module tt_um_kfilipekk_gpsdo (
 
     //the mode inputs go through two flops, pps does not, its edge is what
     //the delay line times
-    reg  [3:0] mode_m, mode;
+    reg  [4:0] mode_m, mode;
     always @(posedge clk) begin
-        mode_m <= {ui_in[5:4], ui_in[2:1]};
+        mode_m <= {ui_in[6], ui_in[5:4], ui_in[2:1]};
         mode   <= mode_m;
     end
 
-    wire       pps_in  = ui_in[0];
-    wire       hold_in = mode[0];
-    wire       cal     = mode[1];
-    wire       ring_on = ui_in[3] | ui_in[2];
-    wire [1:0] gain    = mode[3:2];
+    wire       pps_in    = ui_in[0];
+    wire       hold_in   = mode[0];
+    wire       cal       = mode[1];
+    wire       ring_on   = ui_in[3] | ui_in[2];
+    wire [1:0] gain      = mode[3:2];
+    wire       inv_slope = mode[4];
 
     //a 10 mhz second. SIM_SHORT shrinks it for rtl simulation only
 `ifdef SIM_SHORT
@@ -183,7 +184,7 @@ module tt_um_kfilipekk_gpsdo (
     always @(posedge clk)
         if (!rst_n) acc <= 17'd0;
         else        acc <= {1'b0, acc[15:0]} + {1'b0, dac};
-    wire efc = acc[16];
+    wire efc = acc[16] ^ inv_slope;
 
     wire pps_out = pcnt < NOM / 8;
 
@@ -256,10 +257,10 @@ module tt_um_kfilipekk_gpsdo (
     );
 
     assign uo_out  = {line_in, seen, rdiv[9], lost, locked, pps_out, efc, tx};
-    assign uio_out = dac[15:8];
+    assign uio_out = inv_slope ? ~dac[15:8] : dac[15:8];
     assign uio_oe  = 8'hFF;
 
-    wire _unused = &{ena, uio_in, ui_in[7:6], rdiv[8:6], rdiv[4:0], 1'b0};
+    wire _unused = &{ena, uio_in, ui_in[7], rdiv[8:6], rdiv[4:0], 1'b0};
 
 `ifdef FORMAL
     top_chk #(.NOM(NOM), .JAM(JAM)) u_chk (.clk(clk), .rst_n(rst_n), .pcnt(pcnt),

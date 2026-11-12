@@ -123,13 +123,14 @@ through the RC to the tuning pin and `UART_TX` to a USB serial adapter.
 `LOCKED` goes high after 15 seconds in a row within 24 taps. Start with `GAIN`
 at 0, 2 and 3 are slower for a better oscillator.
 
-| Input   | Use                                                 |
-| ------- | --------------------------------------------------- |
-| PPS     | GPS pulse per second, rising edge timed             |
-| HOLD    | freeze the control word                             |
-| CAL     | time ring edges instead of PPS                      |
-| RING_ON | run the ring oscillator                             |
-| GAIN    | 0 1:1, 1 x2, 2 /2, 3 /4 from integrator to DAC word |
+| Input     | Use                                                 |
+| --------- | --------------------------------------------------- |
+| PPS       | GPS pulse per second, rising edge timed             |
+| HOLD      | freeze the control word                             |
+| CAL       | time ring edges instead of PPS                      |
+| RING_ON   | run the ring oscillator                             |
+| GAIN      | 0 1:1, 1 x2, 2 /2, 3 /4 from integrator to DAC word |
+| INV_SLOPE | 0 positive (standard), 1 negative tuning slope      |
 
 | Output   | Use                                               |
 | -------- | ------------------------------------------------- |

@@ -295,3 +295,19 @@ async def cal_mode_streams_ring_codes(dut):
     assert len(codes) >= 5, lines
     assert all(c <= N for c in codes), codes
     assert len(set(codes)) > 1, codes
+
+
+@cocotb.test(skip=GL)
+async def inv_slope_locks_negative_slope_oscillator(dut):
+    # ui_in[6] sets INV_SLOPE (0x40).
+    # with negative slope oscillator (df/dV < 0), higher DAC word decreases
+    # EFC duty cycle (and inverts uio_out), driving frequency up to lock.
+    lines = await setup(dut, ui=0x40)
+    dac = lambda: int(dut.user_project.u_loop.dac.value)
+    g = 0.5 / (NOM * T_NS / TAP_NS)
+    y = lambda: -30 / NOM + g * (dac() - 32768)
+    await gps(dut, 60, offset_ns=30.0, y=y)
+    assert bit(dut.uo_out, 3) == 1, lines[-3:]
+    assert abs(y() * NOM) < 0.2, (y() * NOM, lines[-3:])
+    assert int(dut.uio_out.value) == (~(dac() >> 8)) & 0xFF
+
