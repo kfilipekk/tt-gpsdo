@@ -18,3 +18,9 @@ module tmr_reg #(
     endgenerate
 
 endmodule
+
+`ifdef VERILATOR
+module gf180mcu_fd_sc_mcu7t5v0__dffq_1 (input wire CLK, input wire D, output reg Q);
+    always @(posedge CLK) Q <= D;
+endmodule
+`endif

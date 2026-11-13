@@ -73,3 +73,9 @@ module tdc #(
 `endif
 
 endmodule
+
+`ifdef VERILATOR
+module gf180mcu_fd_sc_mcu7t5v0__dlyd_1 (input wire I, output wire Z);
+    assign Z = I;
+endmodule
+`endif
