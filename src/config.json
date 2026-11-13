@@ -2,12 +2,12 @@
   "DESIGN_NAME": "tt_um_kfilipekk_gpsdo",
   "PDK": "gf180mcuD",
   "VERILOG_FILES": [
-    "dir::project.v",
-    "dir::tdc.v",
-    "dir::ring.v",
-    "dir::loop.v",
-    "dir::tmr_reg.v",
-    "dir::uart_tx.v"
+    "dir::src/project.v",
+    "dir::src/tdc.v",
+    "dir::src/ring.v",
+    "dir::src/loop.v",
+    "dir::src/tmr_reg.v",
+    "dir::src/uart_tx.v"
   ],
   "DIE_AREA": [0, 0, 346.64, 160.72],
   "FP_DEF_TEMPLATE": "dir::tt_block_1x1_pgvdd.def",
