@@ -15,7 +15,6 @@
   "PNR_SDC_FILE": "dir::src/gpsdo.sdc",
   "SIGNOFF_SDC_FILE": "dir::src/gpsdo.sdc",
   "DIE_AREA": [0, 0, 346.64, 160.72],
-  "FP_DEF_TEMPLATE": "dir::src/tt_block_1x1_pgvdd.def",
   "FP_SIZING": "absolute",
   "TOP_MARGIN_MULT": 1,
   "BOTTOM_MARGIN_MULT": 1,

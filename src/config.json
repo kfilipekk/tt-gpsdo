@@ -10,7 +10,6 @@
     "dir::src/uart_tx.v"
   ],
   "DIE_AREA": [0, 0, 346.64, 160.72],
-  "FP_DEF_TEMPLATE": "dir::tt_block_1x1_pgvdd.def",
   "CLOCK_PORT": "clk",
   "CLOCK_PERIOD": 100,
   "PNR_SDC_FILE": "dir::gpsdo.sdc",
