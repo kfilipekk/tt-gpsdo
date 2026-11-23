@@ -21,6 +21,8 @@ corner, and LVS, DRC and antenna clean, see the
 
 The hardened tile, 347 x 161 µm. There is also a
 [3D viewer](https://kfilipekk.github.io/tt-gpsdo).
+The GDS, LEF and gate-level netlist are in [gds/](gds), from the
+[gds run](https://github.com/kfilipekk/tt-gpsdo/actions/runs/43340956231) on commit 0ff115e.
 
 ## Why a GPSDO?
 
